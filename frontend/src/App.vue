@@ -1,21 +1,42 @@
 <script setup>
-import HelloWorld from './components/HelloWorld.vue'</script>
+import {h, reactive, ref} from 'vue';
+import { CheckCircleOutlined } from '@ant-design/icons-vue';
+const open = ref(false);
+//
+// const data = reactive({
+//   isNewComparison: false,
+// })
+
+
+function newComparison() {
+  open.value = true;
+}
+
+
+</script>
 
 <template>
-  <img id="logo" alt="Wails logo" src="./assets/images/logo-universal.png"/>
-  <HelloWorld/>
+  <img id="empty-comparison" src="./assets/images/empty-comparison.png"/>
+  <a-button @click="newComparison" type="primary" :size="size" class="comparison-btn" :icon="h(CheckCircleOutlined)">
+    对比差异
+  </a-button>
+
+  <a-modal v-model:open="open" title="配置" @ok="handleOk" :width="600">
+    <p>Some contents...</p>
+    <p>Some contents...</p>
+    <p>Some contents...</p>
+  </a-modal>
 </template>
 
 <style>
-#logo {
+#empty-comparison {
   display: block;
-  width: 50%;
-  height: 50%;
+  width: 248px;
   margin: auto;
-  padding: 10% 0 0;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
-  background-origin: content-box;
+  padding-top: 180px;
+}
+
+.comparison-btn {
+  margin-top: 90px;
 }
 </style>
