@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // App struct
@@ -21,6 +22,8 @@ func (a *App) startup(ctx context.Context) {
 }
 
 // Greet returns a greeting for the given name
-func (a *App) Greet() {
+func (a *App) OpenDirectoryDialog() string {
+	path, _ := runtime.OpenDirectoryDialog(a.ctx, runtime.OpenDialogOptions{})
 
+	return path
 }
