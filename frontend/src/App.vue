@@ -1,11 +1,11 @@
 <script setup>
-import {h, reactive, ref} from 'vue';
+import {h, ref} from 'vue';
 import {CheckCircleOutlined, FileSearchOutlined, IdcardOutlined, FolderOpenOutlined} from '@ant-design/icons-vue';
-import {OpenDirectoryDialog} from "../wailsjs/go/main/App";
+import {Comparison, OpenDirectoryDialog} from "../wailsjs/go/main/App";
 
 const open = ref(false);
-const pathA = ref('');
-const pathB = ref('');
+const pathA = ref('/Volumes/720G-520/pathA');
+const pathB = ref('/Volumes/720G-520/pathB');
 
 const checkedA = ref(false);
 const checkedB = ref(false);
@@ -16,6 +16,21 @@ function newComparison() {
 function openDirectory(type) {
   OpenDirectoryDialog().then(result => {
     type === 'A' ? pathA.value = result : pathB.value = result
+  })
+}
+
+function comparison(type) {
+  let data = {
+    checkType: type,
+    pathA: pathA.value,
+    isAppendTimeA: checkedA.value,
+    pathB: pathB.value,
+    isAppendTimeB: checkedB.value,
+  }
+
+  Comparison(data).then(result => {
+    alert(result)
+    console.log(result)
   })
 }
 
@@ -82,10 +97,10 @@ function openDirectory(type) {
       </div>
     </div>
     <div class="ant-modal-footer">
-      <a-button class="ant-btn ant-btn-default comparison-name" type="button" :icon="h(FileSearchOutlined)">
+      <a-button @click="comparison('name')" class="ant-btn ant-btn-default comparison-name" type="button" :icon="h(FileSearchOutlined)">
         <span>对比文件名</span>
       </a-button>
-      <a-button class="ant-btn ant-btn-primary" type="button" :icon="h(IdcardOutlined)">
+      <a-button @click="comparison('md5')" class="ant-btn ant-btn-primary" type="button" :icon="h(IdcardOutlined)">
         <span>对比MD5</span>
       </a-button>
     </div>
