@@ -9,6 +9,13 @@ const pathB = ref('/Volumes/720G-520/pathB');
 
 const checkedA = ref(false);
 const checkedB = ref(false);
+
+const loadingName = ref(false)
+const disabledName = ref(false)
+
+const loadingMD5= ref(false)
+const disabledMD5= ref(false)
+
 function newComparison() {
   open.value = true;
 }
@@ -20,18 +27,41 @@ function openDirectory(type) {
 }
 
 function comparison(type) {
-  let data = {
-    checkType: type,
-    pathA: pathA.value,
-    isAppendTimeA: checkedA.value,
-    pathB: pathB.value,
-    isAppendTimeB: checkedB.value,
+  if (type === 'name') {
+    loadingName.value = true
+    disabledMD5.value = true
   }
 
-  Comparison(data).then(result => {
-    alert(result)
-    console.log(result)
-  })
+  if (type === 'md5') {
+    loadingMD5.value = true
+    disabledName.value = true
+  }
+
+  setTimeout(() => {
+    let data = {
+      checkType: type,
+      pathA: pathA.value,
+      isAppendTimeA: checkedA.value,
+      pathB: pathB.value,
+      isAppendTimeB: checkedB.value,
+    }
+
+    Comparison(data).then(result => {
+      console.log(result)
+
+      if (type === 'name') {
+        loadingName.value = false
+        disabledMD5.value = false
+      }
+
+      if (type === 'md5') {
+        loadingMD5.value = false
+        disabledName.value = false
+      }
+    })
+  }, 3000)
+
+
 }
 
 
@@ -97,10 +127,10 @@ function comparison(type) {
       </div>
     </div>
     <div class="ant-modal-footer">
-      <a-button @click="comparison('name')" class="ant-btn ant-btn-default comparison-name" type="button" :icon="h(FileSearchOutlined)">
+      <a-button @click="comparison('name')" class="ant-btn ant-btn-default comparison-name" type="button" :icon="h(FileSearchOutlined)" :loading="loadingName" :disabled="disabledName">
         <span>对比文件名</span>
       </a-button>
-      <a-button @click="comparison('md5')" class="ant-btn ant-btn-primary" type="button" :icon="h(IdcardOutlined)">
+      <a-button @click="comparison('md5')" class="ant-btn ant-btn-primary" type="button" :icon="h(IdcardOutlined)" :loading="loadingMD5" :disabled="disabledMD5">
         <span>对比MD5</span>
       </a-button>
     </div>
