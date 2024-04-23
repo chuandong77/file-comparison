@@ -4,4 +4,6 @@ import {main} from '../models';
 
 export function Comparison(arg1:main.requestData):Promise<string>;
 
+export function GetComparisonResult():Promise<string>;
+
 export function OpenDirectoryDialog():Promise<string>;

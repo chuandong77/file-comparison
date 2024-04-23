@@ -59,7 +59,7 @@ func (a *App) Comparison(data requestData) string {
 	// 读取 pathB 目录中所有文件名
 	filesB, err := os.ReadDir(data.PathB)
 	if err != nil {
-		return returnJson(0, nil, "错误：读取目录 B 失败")
+		return returnJson(0, nil, "错误：读取目录 B 失败：" + err.Error())
 	}
 
 	// 存储 pathB 目录中所有文件名的临时 map
@@ -89,7 +89,7 @@ func (a *App) Comparison(data requestData) string {
 
 	filesA, err := os.ReadDir(data.PathA)
 	if err != nil {
-		return returnJson(0, nil, "错误：读取目录 A 失败")
+		return returnJson(0, nil, "错误：读取目录 A 失败：" + err.Error())
 	}
 
 	var filePairs []FilePair
@@ -116,15 +116,38 @@ func (a *App) Comparison(data requestData) string {
 
 		if _, exists := filesMap[newFilenameA]; exists {
 			filePairs = append(filePairs, FilePair{
-				PathA: getFilePath(data.PathA, fileA.Name()),
+				PathA: data.PathA,
 				NameA: fileA.Name(),
-				PathB: getFilePath(data.PathB, filesMap[newFilenameA]),
+				PathB: data.PathB,
 				NameB: filesMap[newFilenameA],
 			})
 		}
 	}
 
+	jsonData, _ := json.Marshal(filePairs)
+	// 将 JSON 字节写入文件
+	err = os.WriteFile("comparison-result.json", jsonData, 0644)
+	if err != nil {
+		return returnJson(0, nil, "创建对比结果失败：" + err.Error())
+	}
+
 	return returnJson(1, filePairs, "成功")
+}
+
+func (a *App) GetComparisonResult() string {
+	jsonByte, err := os.ReadFile("comparison-result.json")
+	if err != nil {
+		return returnJson(0, nil, "暂无对比结果")
+	}
+
+	//将结果的json字节转回结构
+	var result []FilePair
+	err = json.Unmarshal(jsonByte, &result)
+	if err != nil {
+		return returnJson(0, nil, "暂无对比结果" + err.Error())
+	}
+
+	return returnJson(1, result, "成功")
 }
 
 func getFilePath(path string, fileName string) string {

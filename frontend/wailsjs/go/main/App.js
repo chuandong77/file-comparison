@@ -6,6 +6,10 @@ export function Comparison(arg1) {
   return window['go']['main']['App']['Comparison'](arg1);
 }
 
+export function GetComparisonResult() {
+  return window['go']['main']['App']['GetComparisonResult']();
+}
+
 export function OpenDirectoryDialog() {
   return window['go']['main']['App']['OpenDirectoryDialog']();
 }
