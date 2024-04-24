@@ -27,7 +27,7 @@ const disabledName = ref(false)
 const loadingMD5= ref(false)
 const disabledMD5= ref(false)
 
-onMounted((params) => {
+onMounted(() => {
   isResultExist.value = true
   // GetComparisonResult().then(result => {
   //   let res = JSON.parse(result)

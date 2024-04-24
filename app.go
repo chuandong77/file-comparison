@@ -141,7 +141,7 @@ func (a *App) Comparison(data requestData) string {
 
 	jsonData, _ := json.Marshal(ComparisonResults)
 	// 将 JSON 字节写入文件
-	err = os.WriteFile("comparison-result.json", jsonData, 0644)
+	err = os.WriteFile("./comparison-result.json", jsonData, 0777)
 	if err != nil {
 		return returnJson(0, nil, "创建对比结果失败：" + err.Error())
 	}
@@ -150,7 +150,7 @@ func (a *App) Comparison(data requestData) string {
 }
 
 func (a *App) GetComparisonResult() string {
-	jsonByte, err := os.ReadFile("comparison-result.json")
+	jsonByte, err := os.ReadFile("./comparison-result.json")
 	if err != nil {
 		return returnJson(0, nil, "暂无对比结果")
 	}
@@ -259,7 +259,7 @@ func returnJson(ret int, data any, msg string) string  {
 }
 
 func (a *App) DelComparisonResult() string {
-	err := os.Remove("comparison-result.json")
+	err := os.Remove("./comparison-result.json")
 	if err != nil {
 		return returnJson(0, nil, "删除结果失败")
 	}
