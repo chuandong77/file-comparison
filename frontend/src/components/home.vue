@@ -2,14 +2,21 @@
 import {h, onMounted, ref} from 'vue';
 import {CheckCircleOutlined, FileSearchOutlined, IdcardOutlined, FolderOpenOutlined} from '@ant-design/icons-vue';
 import {Comparison, OpenDirectoryDialog, GetComparisonResult} from "../../wailsjs/go/main/App";
-import { useRouter } from 'vue-router'
+import { message } from 'ant-design-vue';
 
+import { useRouter, useRoute } from 'vue-router'
 const router = useRouter()
+const route = useRoute()
 
 const open = ref(false);
 const isResultExist = ref(false);
-const pathA = ref('/Volumes/720G-520/pathA');
-const pathB = ref('/Volumes/720G-520/pathB');
+const isShowNewResult = ref(false);
+const resultNum = ref(0);
+// const pathA = ref('/Volumes/720G-520/pathA');
+// const pathB = ref('/Volumes/720G-520/pathB');
+
+const pathA = ref('/Volumes/DATA/pathA');
+const pathB = ref('/Volumes/DATA/pathB');
 
 const checkedA = ref(false);
 const checkedB = ref(false);
@@ -20,10 +27,14 @@ const disabledName = ref(false)
 const loadingMD5= ref(false)
 const disabledMD5= ref(false)
 
-onMounted(() => {
+onMounted((params) => {
   isResultExist.value = true
   // GetComparisonResult().then(result => {
-  //   isResultExist.value = true
+  //   let res = JSON.parse(result)
+  //   if (res.ret === 1 && res.data !== null) {
+  //     //存在对比结果时，显示继续处理弹框
+  //     isResultExist.value = true
+  //   }
   // })
 })
 
@@ -68,10 +79,24 @@ function comparison(type) {
       loadingMD5.value = false
       disabledName.value = false
     }
+
+    let res = JSON.parse(result)
+    if (res.ret === 0) {
+      message.error(res.msg);
+      return
+    }
+
+    if (res.data === null) {
+      message.info('很好，暂无任何相同数据');
+      return
+    }
+
+    resultNum.value = res.data
+    isShowNewResult.value = true
   })
 }
 
-function continueProcessing() {
+function toResult() {
   router.push('/comparison-result')
 }
 
@@ -147,8 +172,12 @@ function continueProcessing() {
       </div>
     </a-modal>
 
-    <a-modal v-model:open="isResultExist" title="提示" @ok="continueProcessing" ok-text="继续" cancel-text="取消" width="400px">
-      <p>存在对比结果，是否继续处理？</p>
+    <a-modal v-model:open="isResultExist" title="提示" @ok="toResult" ok-text="继续" cancel-text="取消" width="400px">
+      <p style="margin-top: 20px">存在对比结果，是否继续处理？</p>
+    </a-modal>
+
+    <a-modal v-model:open="isShowNewResult" title="对比完成" @ok="toResult" ok-text="去处理" cancel-text="取消" width="400px">
+      <p style="margin-top: 20px">对比完成，共有 {{resultNum}} 个文件可能重复，去处理？</p>
     </a-modal>
 </template>
 

@@ -43,17 +43,25 @@ type requestData struct {
 	IsAppendTimeB bool `json:"isAppendTimeB"`
 }
 
-type FilePair struct {
+//对比结果
+type ComparisonResult struct {
 	PathA string
 	NameA string
+	SizeA int64
 	PathB string
 	NameB string
+	SizeB int64
 }
 
 type Response struct {
 	Ret  int        `json:"ret"`
 	Msg  string     `json:"msg"`
 	Data any `json:"data"`
+}
+
+type fileInfo struct {
+	Name string
+	Size int64
 }
 func (a *App) Comparison(data requestData) string {
 	// 读取 pathB 目录中所有文件名
@@ -63,7 +71,7 @@ func (a *App) Comparison(data requestData) string {
 	}
 
 	// 存储 pathB 目录中所有文件名的临时 map
-	filesMap := make(map[string]string)
+	filesMap := make(map[string]fileInfo)
 	for _, fileB := range filesB {
 		fileNameB := fileB.Name()
 		if fileNameB == ".DS_Store" || fileB.IsDir() {
@@ -84,7 +92,11 @@ func (a *App) Comparison(data requestData) string {
 			}
 		}
 
-		filesMap[fileNameB] = fileB.Name()
+		fileInfoB, _ := fileB.Info()
+		filesMap[fileNameB] = fileInfo{
+			Name: fileB.Name(),
+			Size: fileInfoB.Size(),
+		}
 	}
 
 	filesA, err := os.ReadDir(data.PathA)
@@ -92,7 +104,7 @@ func (a *App) Comparison(data requestData) string {
 		return returnJson(0, nil, "错误：读取目录 A 失败：" + err.Error())
 	}
 
-	var filePairs []FilePair
+	var ComparisonResults []ComparisonResult
 	for _, fileA := range filesA {
 		newFilenameA := fileA.Name()
 		if newFilenameA == ".DS_Store" || fileA.IsDir() {
@@ -114,24 +126,27 @@ func (a *App) Comparison(data requestData) string {
 			}
 		}
 
+		fileInfoA, _ := fileA.Info()
 		if _, exists := filesMap[newFilenameA]; exists {
-			filePairs = append(filePairs, FilePair{
+			ComparisonResults = append(ComparisonResults, ComparisonResult{
 				PathA: data.PathA,
 				NameA: fileA.Name(),
+				SizeA: fileInfoA.Size(),
 				PathB: data.PathB,
-				NameB: filesMap[newFilenameA],
+				NameB: filesMap[newFilenameA].Name,
+				SizeB: filesMap[newFilenameA].Size,
 			})
 		}
 	}
 
-	jsonData, _ := json.Marshal(filePairs)
+	jsonData, _ := json.Marshal(ComparisonResults)
 	// 将 JSON 字节写入文件
 	err = os.WriteFile("comparison-result.json", jsonData, 0644)
 	if err != nil {
 		return returnJson(0, nil, "创建对比结果失败：" + err.Error())
 	}
 
-	return returnJson(1, filePairs, "成功")
+	return returnJson(1, len(ComparisonResults), "成功")
 }
 
 func (a *App) GetComparisonResult() string {
@@ -141,7 +156,7 @@ func (a *App) GetComparisonResult() string {
 	}
 
 	//将结果的json字节转回结构
-	var result []FilePair
+	var result []ComparisonResult
 	err = json.Unmarshal(jsonByte, &result)
 	if err != nil {
 		return returnJson(0, nil, "暂无对比结果" + err.Error())
@@ -241,4 +256,13 @@ func returnJson(ret int, data any, msg string) string  {
 	jsonData, _ := json.Marshal(response)
 
 	return string(jsonData)
+}
+
+func (a *App) DelComparisonResult() string {
+	err := os.Remove("comparison-result.json")
+	if err != nil {
+		return returnJson(0, nil, "删除结果失败")
+	}
+
+	return returnJson(1, nil, "删除结果成功")
 }
