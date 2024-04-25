@@ -10,10 +10,18 @@ export function DelComparisonResult() {
   return window['go']['main']['App']['DelComparisonResult']();
 }
 
+export function DelFile(arg1, arg2) {
+  return window['go']['main']['App']['DelFile'](arg1, arg2);
+}
+
 export function GetComparisonResult(arg1, arg2) {
   return window['go']['main']['App']['GetComparisonResult'](arg1, arg2);
 }
 
 export function OpenDirectoryDialog() {
   return window['go']['main']['App']['OpenDirectoryDialog']();
+}
+
+export function OpenFileDialog(arg1, arg2) {
+  return window['go']['main']['App']['OpenFileDialog'](arg1, arg2);
 }

@@ -6,6 +6,10 @@ export function Comparison(arg1:main.requestData):Promise<string>;
 
 export function DelComparisonResult():Promise<string>;
 
+export function DelFile(arg1:Array<main.delFileRequest>,arg2:string):Promise<void>;
+
 export function GetComparisonResult(arg1:number,arg2:number):Promise<string>;
 
 export function OpenDirectoryDialog():Promise<string>;
+
+export function OpenFileDialog(arg1:string,arg2:string):Promise<void>;

@@ -10,6 +10,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -37,6 +38,33 @@ func (a *App) startup(ctx context.Context) {
 func (a *App) OpenDirectoryDialog() string {
 	path, _ := runtime.OpenDirectoryDialog(a.ctx, runtime.OpenDialogOptions{})
 	return path
+}
+
+// 选择目录
+func (a *App) OpenFileDialog(pathA string, pathB string) error {
+	exec.Command("open", pathA).Start()
+	exec.Command("open", pathB).Start()
+
+	return nil
+}
+
+
+type delFileRequest struct {
+	PathA string
+	PathB string
+}
+func (a *App) DelFile(params []delFileRequest, dirType string) error {
+	for _,path :=  range params {
+		if dirType == "A" {
+			os.Remove(path.PathA)
+		}
+
+		if dirType == "B" {
+			os.Remove(path.PathB)
+		}
+	}
+
+	return nil
 }
 
 type requestData struct {

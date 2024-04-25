@@ -1,5 +1,6 @@
 export namespace main {
 	
+	
 	export class requestData {
 	    checkType: string;
 	    pathA: string;

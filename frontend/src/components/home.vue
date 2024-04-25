@@ -12,11 +12,11 @@ const open = ref(false);
 const isResultExist = ref(false);
 const isShowNewResult = ref(false);
 const resultNum = ref(0);
-// const pathA = ref('/Volumes/720G-520/pathA');
-// const pathB = ref('/Volumes/720G-520/pathB');
+const pathA = ref('/Volumes/720G-520/pathA');
+const pathB = ref('/Volumes/720G-520/pathB');
 
-const pathA = ref('/Volumes/DATA/pathA');
-const pathB = ref('/Volumes/DATA/pathB');
+// const pathA = ref('/Volumes/DATA/pathA');
+// const pathB = ref('/Volumes/DATA/pathB');
 
 const checkedA = ref(false);
 const checkedB = ref(false);
@@ -28,14 +28,13 @@ const loadingMD5= ref(false)
 const disabledMD5= ref(false)
 
 onMounted(() => {
-  isResultExist.value = true
-  // GetComparisonResult().then(result => {
-  //   let res = JSON.parse(result)
-  //   if (res.ret === 1 && res.data !== null) {
-  //     //存在对比结果时，显示继续处理弹框
-  //     isResultExist.value = true
-  //   }
-  // })
+  GetComparisonResult().then(result => {
+    let res = JSON.parse(result)
+    if (res.ret === 1 && res.data.list !== null) {
+      //存在对比结果时，显示继续处理弹框
+      isResultExist.value = true
+    }
+  })
 })
 
 function newComparison() {
