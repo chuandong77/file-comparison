@@ -18,7 +18,7 @@ func main() {
 	err := wails.Run(&options.App{
 		Title:  "文件去重",
 		Width:  1280,
-		Height: 720,
+		Height: 900,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},

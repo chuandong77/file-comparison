@@ -5,6 +5,8 @@ go 1.21
 toolchain go1.22.0
 
 require (
+	github.com/adrium/goheif v0.0.0-20230113233934-ca402e77a786
+	github.com/disintegration/imaging v1.6.2
 	github.com/evanoberholster/imagemeta v0.3.1
 	github.com/wailsapp/wails/v2 v2.8.1
 )
@@ -28,6 +30,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/rs/zerolog v1.29.0 // indirect
+	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd // indirect
 	github.com/samber/lo v1.38.1 // indirect
 	github.com/tinylib/msgp v1.1.8 // indirect
 	github.com/tkrajina/go-reflector v0.5.6 // indirect
@@ -37,6 +40,7 @@ require (
 	github.com/wailsapp/mimetype v1.4.1 // indirect
 	golang.org/x/crypto v0.18.0 // indirect
 	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1 // indirect
+	golang.org/x/image v0.15.0 // indirect
 	golang.org/x/net v0.20.0 // indirect
 	golang.org/x/sys v0.16.0 // indirect
 	golang.org/x/text v0.14.0 // indirect

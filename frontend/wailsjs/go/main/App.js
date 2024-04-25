@@ -10,8 +10,8 @@ export function DelComparisonResult() {
   return window['go']['main']['App']['DelComparisonResult']();
 }
 
-export function GetComparisonResult() {
-  return window['go']['main']['App']['GetComparisonResult']();
+export function GetComparisonResult(arg1, arg2) {
+  return window['go']['main']['App']['GetComparisonResult'](arg1, arg2);
 }
 
 export function OpenDirectoryDialog() {

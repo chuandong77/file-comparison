@@ -3,14 +3,18 @@ package main
 import (
 	"context"
 	"crypto/md5"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/evanoberholster/imagemeta"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
+	"sync"
 	"time"
+	"github.com/disintegration/imaging"
 )
 
 // App struct
@@ -48,9 +52,12 @@ type ComparisonResult struct {
 	PathA string
 	NameA string
 	SizeA int64
+	Base64A string
+
 	PathB string
 	NameB string
 	SizeB int64
+	Base64B string
 }
 
 type Response struct {
@@ -132,6 +139,7 @@ func (a *App) Comparison(data requestData) string {
 				PathA: data.PathA,
 				NameA: fileA.Name(),
 				SizeA: fileInfoA.Size(),
+
 				PathB: data.PathB,
 				NameB: filesMap[newFilenameA].Name,
 				SizeB: filesMap[newFilenameA].Size,
@@ -141,7 +149,7 @@ func (a *App) Comparison(data requestData) string {
 
 	jsonData, _ := json.Marshal(ComparisonResults)
 	// 将 JSON 字节写入文件
-	err = os.WriteFile("./comparison-result.json", jsonData, 0777)
+	err = os.WriteFile(getComparisonResultFileName(), jsonData, 0777)
 	if err != nil {
 		return returnJson(0, nil, "创建对比结果失败：" + err.Error())
 	}
@@ -149,8 +157,8 @@ func (a *App) Comparison(data requestData) string {
 	return returnJson(1, len(ComparisonResults), "成功")
 }
 
-func (a *App) GetComparisonResult() string {
-	jsonByte, err := os.ReadFile("./comparison-result.json")
+func (a *App) GetComparisonResult(page int, pageSize int) string {
+	jsonByte, err := os.ReadFile(getComparisonResultFileName())
 	if err != nil {
 		return returnJson(0, nil, "暂无对比结果")
 	}
@@ -162,7 +170,49 @@ func (a *App) GetComparisonResult() string {
 		return returnJson(0, nil, "暂无对比结果" + err.Error())
 	}
 
-	return returnJson(1, result, "成功")
+	//总条数
+	total := len(result)
+
+	//切片分页
+	result = pagination(result, page, pageSize)
+
+	var wg = sync.WaitGroup{}
+	wg.Add(len(result) * 2)
+
+	for key,item := range result {
+		key := key
+		item := item
+		prefix := []string {"A", "B"}
+
+		for _, px := range prefix {
+			px := px
+			go func() {
+				defer wg.Done()
+
+				if px == "A" {
+					result[key].Base64A = getCacheImageToBase64(getFilePath(item.PathA, item.NameA), item.NameA, "A")
+				}
+
+				if px == "B" {
+					result[key].Base64B = getCacheImageToBase64(getFilePath(item.PathB, item.NameB), item.NameB, "B")
+				}
+			}()
+		}
+	}
+
+	wg.Wait()
+
+	type ret struct {
+		List []ComparisonResult
+		Total int
+	}
+
+	data := ret {
+		List: result,
+		Total: total,
+	}
+
+	return returnJson(1, data, "成功")
 }
 
 func getFilePath(path string, fileName string) string {
@@ -259,10 +309,190 @@ func returnJson(ret int, data any, msg string) string  {
 }
 
 func (a *App) DelComparisonResult() string {
-	err := os.Remove("./comparison-result.json")
+	err := os.Remove(getComparisonResultFileName())
 	if err != nil {
 		return returnJson(0, nil, "删除结果失败")
 	}
 
 	return returnJson(1, nil, "删除结果成功")
 }
+
+// GetCurrentDirectory 返回当前程序运行的目录路径
+func getCurrentDirectory() (string) {
+	// 获取可执行文件的路径
+	exePath, err := os.Executable()
+	if err != nil {
+		return ""
+	}
+
+	// 获取可执行文件所在的目录
+	currentDir := filepath.Dir(exePath)
+
+	return currentDir
+}
+
+func getComparisonResultFileName() string  {
+	// 调用 getCurrentDirectory 函数获取当前程序运行的目录
+	return getCurrentDirectory() + "/comparison-result.json"
+}
+
+// AdjustImage 调整图片大小并转换格式
+func adjustImage(inputPath, outputPath string) error {
+	// 打开图片文件
+	src, err := imaging.Open(inputPath)
+	if err != nil {
+		fmt.Println("打开失败" + err.Error())
+		return err
+	}
+
+	ext := filepath.Ext(inputPath)
+
+	// 如果图片格式为 HEIC，则转换为 JPEG
+	if ext == ".HEIC" {
+		// 调整图片大小为宽度 200px，高度按比例调整
+		dst := imaging.Resize(src, 200, 0, imaging.Lanczos)
+
+		// 保存为 JPEG 格式
+		err = imaging.Save(dst, outputPath)
+		if err != nil {
+			fmt.Println(err.Error())
+			return err
+		}
+
+		fmt.Println("图片格式为 HEIC，已转换为 JPEG，并调整大小完成")
+	} else {
+		// 调整图片大小为宽度 200px，高度按比例调整
+		dst := imaging.Resize(src, 200, 0, imaging.Lanczos)
+
+		// 保存为原始格式
+		err = imaging.Save(dst, outputPath)
+		if err != nil {
+			fmt.Println(err.Error())
+			return err
+		}
+
+		fmt.Println("图片格式为非 HEIC，已调整大小完成")
+	}
+
+	return nil
+}
+
+// imageToBase64 将本地图片转换为 base64 编码
+func imageToBase64(imagePath string) (string) {
+	// 读取本地图片文件
+	imageData, err := os.ReadFile(imagePath)
+	if err != nil {
+		fmt.Println("转换Base64失败" + err.Error())
+		return ""
+	}
+
+	// 将图片内容进行 base64 编码
+	base64Encoded := base64.StdEncoding.EncodeToString(imageData)
+
+	return base64Encoded
+}
+
+func getCacheImageToBase64(file string, fileName string, prefix string) string {
+	return ""
+	cacheFilePath := ""
+
+	if !isImage(file) {
+		return ""
+	}
+
+	if isHEIC(file) {
+		cacheFilePath = getCacheFileName(prefix, replaceHEICExt(fileName))
+		//heic文件转为jpg
+		HeicToJpg(file, cacheFilePath)
+
+		src, _ := imaging.Open(cacheFilePath)
+		// 调整图片大小为宽度 200px，高度按比例调整
+		dst := imaging.Resize(src, 200, 0, imaging.Lanczos)
+		imaging.Save(dst, cacheFilePath)
+	} else {
+		cacheFilePath = getCacheFileName(prefix, fileName)
+		src, _ := imaging.Open(file)
+		// 调整图片大小为宽度 200px，高度按比例调整
+		dst := imaging.Resize(src, 200, 0, imaging.Lanczos)
+		imaging.Save(dst, cacheFilePath)
+	}
+
+	result := imageToBase64(cacheFilePath)
+	if result != "" {
+		defer os.Remove(cacheFilePath)
+	}
+
+	//返回base64
+	return result
+}
+
+func getCacheFileName(prefix string, fileName string) string {
+	err := cacheDirExists(getCurrentDirectory() + "/image_cache")
+	if err != nil {
+		return ""
+	}
+
+	return getCurrentDirectory() + "/image_cache/" + prefix + "_" + fileName
+}
+
+// IsImage 判断文件是否为图片
+func isImage(filePath string) bool {
+	imageExts := []string{".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".heic"}
+	ext := strings.ToLower(filepath.Ext(filePath))
+	for _, imageExt := range imageExts {
+		if ext == imageExt {
+			return true
+		}
+	}
+
+	return false
+}
+
+func isHEIC(filePath string) bool {
+	ext := strings.ToLower(filepath.Ext(filePath))
+	return ext == ".heic"
+}
+
+// replaceHEICExt 替换文件路径中的 HEIC 扩展名为 JPG
+func replaceHEICExt(filePath string) string {
+	ext := filepath.Ext(filePath)
+	if ext == ".heic" || ext == ".HEIC" {
+		return strings.TrimSuffix(filePath, ext) + ".jpg"
+	}
+	return filePath
+}
+
+
+// cacheDirExists 检查目录是否存在，不存在则创建目录
+func cacheDirExists(dirPath string) error {
+	// 检查目录是否存在
+	_, err := os.Stat(dirPath)
+	if os.IsNotExist(err) {
+		// 目录不存在，创建目录
+		err = os.MkdirAll(dirPath, 0755)
+		if err != nil {
+			return err
+		}
+	} else if err != nil {
+		// 其他错误，返回错误信息
+		return err
+	}
+
+	return nil
+}
+
+func pagination(slice []ComparisonResult, page int, pageSize int) []ComparisonResult {
+	start := (page - 1) * pageSize
+	end := start + pageSize
+
+	// 确保 start 和 end 在合法范围内
+	if start < 0 {
+		start = 0
+	}
+	if end > len(slice) {
+		end = len(slice)
+	}
+
+	return slice[start:end]
+}
+

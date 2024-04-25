@@ -6,6 +6,6 @@ export function Comparison(arg1:main.requestData):Promise<string>;
 
 export function DelComparisonResult():Promise<string>;
 
-export function GetComparisonResult():Promise<string>;
+export function GetComparisonResult(arg1:number,arg2:number):Promise<string>;
 
 export function OpenDirectoryDialog():Promise<string>;
