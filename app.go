@@ -479,28 +479,21 @@ func imageToBase64(imagePath string) (string) {
 }
 
 func getCacheImageToBase64(file string, fileName string, prefix string) string {
-	//return ""
-	cacheFilePath := ""
-
 	if !isImage(file) {
 		return ""
 	}
 
-	if isHEIC(file) {
-		cacheFilePath = getCacheFileName(prefix, replaceHEICExt(fileName))
-		//heic文件转为jpg
-		HeicToJpg(file, cacheFilePath)
+	if !isHEIC(file) {
+		return imageToBase64(file)
+	}
 
-		src, _ := imaging.Open(cacheFilePath)
-		// 调整图片大小为宽度 200px，高度按比例调整
-		dst := imaging.Resize(src, 200, 0, imaging.Lanczos)
-		imaging.Save(dst, cacheFilePath)
-	} else {
-		cacheFilePath = getCacheFileName(prefix, fileName)
-		src, _ := imaging.Open(file)
-		// 调整图片大小为宽度 200px，高度按比例调整
-		dst := imaging.Resize(src, 200, 0, imaging.Lanczos)
-		imaging.Save(dst, cacheFilePath)
+	cacheFilePath := getCacheFileName(prefix, replaceHEICExt(fileName))
+
+	//heic文件转为jpg
+	err := HeicToJpg(file, cacheFilePath)
+	//转换失败，有可能不是 heic，直接返回base64试试
+	if err != nil {
+		return imageToBase64(file)
 	}
 
 	result := imageToBase64(cacheFilePath)
@@ -508,7 +501,6 @@ func getCacheImageToBase64(file string, fileName string, prefix string) string {
 		defer os.Remove(cacheFilePath)
 	}
 
-	//返回base64
 	return result
 }
 

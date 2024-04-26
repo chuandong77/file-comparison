@@ -42,8 +42,6 @@ func HeicToJpg(fin string, fout string) error {
 		return err
 	}
 
-	fmt.Println("转换格式成功！")
-
 	return nil
 }
 
