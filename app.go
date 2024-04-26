@@ -34,16 +34,48 @@ func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 }
 
-// 选择目录
+// OpenDirectoryDialog 选择目录
 func (a *App) OpenDirectoryDialog() string {
 	path, _ := runtime.OpenDirectoryDialog(a.ctx, runtime.OpenDialogOptions{})
-	return path
+
+	files, err := os.ReadDir(path)
+	if err != nil {
+		return returnJson(0, nil, "错误：读取目录失败：" + err.Error())
+	}
+
+	total := 0
+	for _,file := range files {
+		if file.Name() == ".DS_Store" || file.IsDir() {
+			continue
+		}
+
+		total ++
+	}
+
+	type result struct {
+		Path string
+		Total int
+	}
+
+	res := result{
+		Path: path,
+		Total: total,
+	}
+
+	return returnJson(1, res, "成功")
 }
 
 // 选择目录
 func (a *App) OpenFileDialog(pathA string, pathB string) error {
-	exec.Command("open", pathA).Start()
-	exec.Command("open", pathB).Start()
+	err := exec.Command("open", pathA).Start()
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	err = exec.Command("open", pathB).Start()
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 
 	return nil
 }
@@ -52,19 +84,45 @@ func (a *App) OpenFileDialog(pathA string, pathB string) error {
 type delFileRequest struct {
 	PathA string
 	PathB string
+	Index int
 }
-func (a *App) DelFile(params []delFileRequest, dirType string) error {
-	for _,path :=  range params {
+func (a *App) DelFile(params []delFileRequest, dirType string) string {
+	jsonByte, err := os.ReadFile(getComparisonResultFileName())
+	if err != nil {
+		return returnJson(0, nil, "暂无对比结果")
+	}
+
+	//将结果的json字节转回结构
+	var results []ComparisonResult
+	err = json.Unmarshal(jsonByte, &results)
+	if err != nil {
+		return returnJson(0, nil, "暂无对比结果" + err.Error())
+	}
+
+	// 逆序删除，以防止删除元素后的索引发生变化
+	for i := len(params) - 1; i >= 0; i-- {
+		fileInfo := params[i]
 		if dirType == "A" {
-			os.Remove(path.PathA)
+			os.Remove(fileInfo.PathA)
 		}
 
 		if dirType == "B" {
-			os.Remove(path.PathB)
+			os.Remove(fileInfo.PathB)
+		}
+
+		indexToRemove := fileInfo.Index
+		if indexToRemove >= 0 && indexToRemove < len(results) {
+			results = append(results[:indexToRemove], results[indexToRemove+1:]...)
 		}
 	}
 
-	return nil
+	jsonData, _ := json.Marshal(results)
+	err = os.WriteFile(getComparisonResultFileName(), jsonData, 0777)
+	if err != nil {
+		return returnJson(0, nil, "更新对比结果失败：" + err.Error())
+	}
+
+	return returnJson(1, nil, "成功")
 }
 
 type requestData struct {

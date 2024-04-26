@@ -1,9 +1,10 @@
 <script setup>
 import {computed, h, onMounted, reactive, ref, watch} from 'vue';
-import {CheckCircleOutlined, DeleteOutlined, FolderOpenOutlined} from '@ant-design/icons-vue';
+import {CheckCircleOutlined, DeleteOutlined, FolderOpenOutlined, QuestionCircleOutlined} from '@ant-design/icons-vue';
 import {DelComparisonResult, GetComparisonResult, OpenFileDialog, DelFile} from "../../wailsjs/go/main/App";
 
 import {useRouter} from 'vue-router'
+import {message} from "ant-design-vue";
 
 const router = useRouter()
 const isCompareAgain = ref(false);
@@ -56,7 +57,8 @@ const onSelectChange = selectedRowKeys => {
     let row = data.value[selectedRowKeys[i]]
     let param = {
       PathA: row.pathA + '/' + row.fileNameA,
-      PathB: row.pathB + '/' + row.fileNameB
+      PathB: row.pathB + '/' + row.fileNameB,
+      Index: (current.value - 1) * pageSize.value + selectedRowKeys[i]
     }
     params.value.push(param)
   }
@@ -73,6 +75,13 @@ onMounted(() => {
 })
 
 function getResult(page, pageSize) {
+  //清空已选择的文件
+  params.value = []
+  state.selectedRowKeys = []
+
+  //重置页码
+  current.value = page
+
   spinning.value = true
   GetComparisonResult(page, pageSize).then(result => {
     data.value = []
@@ -132,7 +141,20 @@ function formatBytes(bytes) {
 }
 
 function delFile(type) {
+  if (params.value.length <= 0) {
+    message.warning('请选择要删除的文件');
+    return
+  }
+
   DelFile(params.value, type).then(result => {
+    let res = JSON.parse(result)
+    if (res.ret === 0) {
+      message.error(res.msg);
+      return
+    }
+
+    message.info('删除成功');
+
     getResult(1, pageSize.value)
   })
 }
@@ -143,12 +165,20 @@ function delFile(type) {
   <div class="container">
     <a-spin class="c-spin" size="large" tip="正在生成预览..." :spinning="spinning"/>
     <div class="head">
-      <a-button @click="delFile('A')" class="del-a" danger type="primary" :icon="h(DeleteOutlined)" :loading="loadingDelA" :disabled="disabledDelA">
-        <span>删除 A 中数据</span>
-      </a-button>
-      <a-button @click="delFile('B')" class="del-b" danger :icon="h(DeleteOutlined)" :loading="loadingDelB" :disabled="disabledDelB">
-        <span>删除 B 中数据</span>
-      </a-button>
+      <a-popconfirm title="删除后将不可恢复，确定删除？" @confirm="delFile('A')" ok-text="确定" cancel-text="取消">
+        <template #icon><question-circle-outlined style="color: red" /></template>
+        <a-button class="del-a" danger type="primary" :icon="h(DeleteOutlined)" :loading="loadingDelA" :disabled="disabledDelA">
+          <span>删除 A 中数据</span>
+        </a-button>
+      </a-popconfirm>
+
+      <a-popconfirm title="删除后将不可恢复，确定删除？" @confirm="delFile('B')" ok-text="确定" cancel-text="取消">
+        <template #icon><question-circle-outlined style="color: red" /></template>
+        <a-button class="del-b" danger :icon="h(DeleteOutlined)" :loading="loadingDelB" :disabled="disabledDelB">
+          <span>删除 B 中数据</span>
+        </a-button>
+      </a-popconfirm>
+
       <a-button @click="compareAgain()" size='large' class="compare-again" type="primary" :icon="h(CheckCircleOutlined)">
         <span>重新对比</span>
       </a-button>
@@ -161,6 +191,9 @@ function delFile(type) {
           class="table"
           :pagination="false"
       >
+        <template #emptyText>
+          <span>暂无重复数据</span>
+        </template>
         <template #bodyCell="{column, text, record}" >
           <template v-if="column.dataIndex === 'fileNameA'">
             <div class="file-img">

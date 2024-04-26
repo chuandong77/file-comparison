@@ -12,11 +12,15 @@ const open = ref(false);
 const isResultExist = ref(false);
 const isShowNewResult = ref(false);
 const resultNum = ref(0);
-const pathA = ref('/Volumes/720G-520/pathA');
-const pathB = ref('/Volumes/720G-520/pathB');
 
-// const pathA = ref('/Volumes/DATA/pathA');
-// const pathB = ref('/Volumes/DATA/pathB');
+const fileNumA = ref(0);
+const fileNumB = ref(0);
+
+// const pathA = ref('/Volumes/720G-520/pathA');
+// const pathB = ref('/Volumes/720G-520/pathB');
+
+const pathA = ref('/Volumes/DATA/pathA');
+const pathB = ref('/Volumes/DATA/pathB');
 
 const checkedA = ref(false);
 const checkedB = ref(false);
@@ -30,7 +34,8 @@ const disabledMD5= ref(false)
 onMounted(() => {
   GetComparisonResult().then(result => {
     let res = JSON.parse(result)
-    if (res.ret === 1 && res.data.list !== null) {
+    console.log(result)
+    if (res.ret === 1 && res.data.List !== null) {
       //存在对比结果时，显示继续处理弹框
       isResultExist.value = true
     }
@@ -43,7 +48,14 @@ function newComparison() {
 
 function openDirectory(type) {
   OpenDirectoryDialog().then(result => {
-    type === 'A' ? pathA.value = result : pathB.value = result
+    let res = JSON.parse(result)
+    if (res.ret === 0) {
+      message.error(res.msg);
+      return
+    }
+
+    type === 'A' ? pathA.value = res.data.Path : pathB.value = res.data.Path
+    type === 'A' ? fileNumA.value = res.data.Total : fileNumB.value = res.data.Total
   })
 }
 
@@ -134,7 +146,7 @@ function toResult() {
             <a-checkbox v-model:checked="checkedA">文件名追加创建时间</a-checkbox>
           </div>
           <div class="file-num">
-            <span>文件数：5987</span>
+            <span>文件数：{{fileNumA}}</span>
           </div>
         </div>
       </div>
@@ -157,7 +169,7 @@ function toResult() {
             <a-checkbox v-model:checked="checkedB">文件名追加创建时间</a-checkbox>
           </div>
           <div class="file-num">
-            <span>文件数：5987</span>
+            <span>文件数：{{fileNumB}}</span>
           </div>
         </div>
       </div>

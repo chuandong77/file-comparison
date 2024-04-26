@@ -6,7 +6,7 @@ export function Comparison(arg1:main.requestData):Promise<string>;
 
 export function DelComparisonResult():Promise<string>;
 
-export function DelFile(arg1:Array<main.delFileRequest>,arg2:string):Promise<void>;
+export function DelFile(arg1:Array<main.delFileRequest>,arg2:string):Promise<string>;
 
 export function GetComparisonResult(arg1:number,arg2:number):Promise<string>;
 
