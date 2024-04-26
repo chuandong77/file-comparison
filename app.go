@@ -479,7 +479,7 @@ func imageToBase64(imagePath string) (string) {
 }
 
 func getCacheImageToBase64(file string, fileName string, prefix string) string {
-	return ""
+	//return ""
 	cacheFilePath := ""
 
 	if !isImage(file) {

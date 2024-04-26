@@ -19,8 +19,8 @@ const fileNumB = ref(0);
 // const pathA = ref('/Volumes/720G-520/pathA');
 // const pathB = ref('/Volumes/720G-520/pathB');
 
-const pathA = ref('/Volumes/DATA/pathA');
-const pathB = ref('/Volumes/DATA/pathB');
+const pathA = ref('');
+const pathB = ref('');
 
 const checkedA = ref(false);
 const checkedB = ref(false);
